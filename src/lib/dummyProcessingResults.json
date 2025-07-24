@@ -1,49 +1,49 @@
 [
   {
+    "file_name": "medical_bill_jan_2024.pdf",
     "document_type": "Medical Bill",
     "status": "completed",
-    "non_sensitive_metadata": {
-      "anomaly": false,
-      "cluster_id": "CLM-2024-001",
-      "validation_status": "valid"
+    "extracted_fields": {
+      "validation_status": "valid",
+      "anomaly": false
     }
   },
   {
+    "file_name": "prescription_dr_sharma.jpg",
     "document_type": "Prescription",
     "status": "completed",
-    "non_sensitive_metadata": {
-      "anomaly": false,
-      "cluster_id": "CLM-2024-001",
-      "validation_status": "valid"
+    "extracted_fields": {
+      "validation_status": "valid",
+      "anomaly": false
     }
   },
   {
+    "file_name": "hospital_discharge_summary.pdf",
     "document_type": "Discharge Summary",
     "status": "completed",
-    "non_sensitive_metadata": {
+    "extracted_fields": {
+      "validation_status": "incomplete",
       "anomaly": true,
-      "anomaly_reason": "Missing discharge date",
-      "cluster_id": "CLM-2024-001",
-      "validation_status": "incomplete"
+      "anomaly_reason": "Missing discharge date"
     }
   },
   {
+    "file_name": "repair_estimate_2024.pdf",
     "document_type": "Repair Estimate",
     "status": "error",
-    "non_sensitive_metadata": {
+    "extracted_fields": {
+      "validation_status": "failed",
       "anomaly": true,
-      "anomaly_reason": "Unreadable document",
-      "cluster_id": null,
-      "validation_status": "failed"
+      "anomaly_reason": "Unreadable document"
     }
   },
   {
+    "file_name": "policy_statement_2024.pdf",
     "document_type": "Policy Statement",
     "status": "completed",
-    "non_sensitive_metadata": {
-      "anomaly": false,
-      "cluster_id": "CLM-2024-002",
-      "validation_status": "valid"
+    "extracted_fields": {
+      "validation_status": "valid",
+      "anomaly": false
     }
   }
 ] 

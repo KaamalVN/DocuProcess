@@ -119,9 +119,8 @@ export const DocumentUpload = () => {
         user_id: user.id,
         document_type: dummy.document_type,
         status: dummy.status,
-        extracted_fields: null, // not storing sensitive data
-        file_name: '', // not storing file name
-        non_sensitive_metadata: dummy.non_sensitive_metadata,
+        extracted_fields: dummy.extracted_fields,
+        file_name: dummy.file_name,
       });
     }
 
@@ -243,6 +242,10 @@ export const DocumentUpload = () => {
                             <h6 className="font-medium mb-2">Processing Result:</h6>
                             <div className="grid grid-cols-2 gap-2 text-sm">
                               <div>
+                                <span className="text-muted-foreground">File Name:</span>
+                                <span className="ml-2 font-medium">{uploadFile.extractedData.file_name}</span>
+                              </div>
+                              <div>
                                 <span className="text-muted-foreground">Type:</span>
                                 <span className="ml-2 font-medium">{uploadFile.extractedData.document_type}</span>
                               </div>
@@ -252,16 +255,16 @@ export const DocumentUpload = () => {
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Validation:</span>
-                                <span className="ml-2 font-medium">{uploadFile.extractedData.non_sensitive_metadata.validation_status}</span>
+                                <span className="ml-2 font-medium">{uploadFile.extractedData.extracted_fields.validation_status}</span>
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Anomaly:</span>
-                                <span className="ml-2 font-medium">{uploadFile.extractedData.non_sensitive_metadata.anomaly ? 'Yes' : 'No'}</span>
+                                <span className="ml-2 font-medium">{uploadFile.extractedData.extracted_fields.anomaly ? 'Yes' : 'No'}</span>
                               </div>
-                              {uploadFile.extractedData.non_sensitive_metadata.anomaly_reason && (
+                              {uploadFile.extractedData.extracted_fields.anomaly_reason && (
                                 <div className="col-span-2">
                                   <span className="text-muted-foreground">Reason:</span>
-                                  <span className="ml-2 font-medium">{uploadFile.extractedData.non_sensitive_metadata.anomaly_reason}</span>
+                                  <span className="ml-2 font-medium">{uploadFile.extractedData.extracted_fields.anomaly_reason}</span>
                                 </div>
                               )}
                             </div>

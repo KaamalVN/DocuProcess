@@ -17,6 +17,9 @@ interface ProcessingRecord {
     dateOfService?: string;
     providerName?: string;
     documentId?: string;
+    validation_status?: string;
+    anomaly?: boolean;
+    anomaly_reason?: string;
   };
 }
 
@@ -33,7 +36,10 @@ const mockHistory: ProcessingRecord[] = [
       claimAmount: '₹25,000',
       dateOfService: '2024-01-15',
       providerName: 'Apollo Hospital',
-      documentId: 'APL-2024-001'
+      documentId: 'APL-2024-001',
+      validation_status: 'Valid',
+      anomaly: false,
+      anomaly_reason: null
     }
   },
   {
@@ -46,7 +52,10 @@ const mockHistory: ProcessingRecord[] = [
       patientName: 'Priya Patel',
       dateOfService: '2024-01-19',
       providerName: 'Dr. Amit Sharma',
-      documentId: 'RX-001923'
+      documentId: 'RX-001923',
+      validation_status: 'Valid',
+      anomaly: false,
+      anomaly_reason: null
     }
   },
   {
@@ -60,7 +69,10 @@ const mockHistory: ProcessingRecord[] = [
       claimAmount: '₹45,000',
       dateOfService: '2024-01-10',
       providerName: 'Fortis Hospital',
-      documentId: 'FOR-DS-2024-089'
+      documentId: 'FOR-DS-2024-089',
+      validation_status: 'Valid',
+      anomaly: false,
+      anomaly_reason: null
     }
   }
 ];
@@ -76,7 +88,7 @@ export const ProcessingHistory = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("document_processing_history")
-        .select("id, document_type, status, non_sensitive_metadata, processed_at")
+        .select("id, file_name, document_type, status, extracted_fields, processed_at")
         .eq("user_id", user.id)
         .order("processed_at", { ascending: false });
       if (!error && data) setHistory(data);
@@ -141,8 +153,8 @@ export const ProcessingHistory = () => {
                     <FileText className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-base">{record.document_type}</h4>
-                    <p className="text-sm text-muted-foreground">{record.non_sensitive_metadata?.cluster_id ? `Cluster: ${record.non_sensitive_metadata.cluster_id}` : null}</p>
+                    <h4 className="font-semibold text-base">{record.file_name}</h4>
+                    <p className="text-sm text-muted-foreground">{record.document_type}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -160,16 +172,16 @@ export const ProcessingHistory = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Validation:</span>
-                    <span className="text-sm font-medium">{record.non_sensitive_metadata?.validation_status}</span>
+                    <span className="text-sm font-medium">{record.extracted_fields?.validation_status}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Anomaly:</span>
-                    <span className="text-sm font-medium">{record.non_sensitive_metadata?.anomaly ? "Yes" : "No"}</span>
+                    <span className="text-sm font-medium">{record.extracted_fields?.anomaly ? "Yes" : "No"}</span>
                   </div>
-                  {record.non_sensitive_metadata?.anomaly_reason && (
+                  {record.extracted_fields?.anomaly_reason && (
                     <div className="flex items-center gap-2 col-span-2">
                       <span className="text-xs text-muted-foreground">Reason:</span>
-                      <span className="text-sm font-medium">{record.non_sensitive_metadata.anomaly_reason}</span>
+                      <span className="text-sm font-medium">{record.extracted_fields.anomaly_reason}</span>
                     </div>
                   )}
                 </div>
