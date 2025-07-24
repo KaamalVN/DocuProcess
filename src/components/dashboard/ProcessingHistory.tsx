@@ -1,6 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Calendar, DollarSign, User, Building } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthContext";
 
 interface ProcessingRecord {
   id: string;
@@ -63,26 +66,53 @@ const mockHistory: ProcessingRecord[] = [
 ];
 
 export const ProcessingHistory = () => {
-  const getStatusColor = (status: ProcessingRecord['status']) => {
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user) return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("document_processing_history")
+        .select("id, document_type, status, non_sensitive_metadata, processed_at")
+        .eq("user_id", user.id)
+        .order("processed_at", { ascending: false });
+      if (!error && data) setHistory(data);
+      setLoading(false);
+    };
+    fetchHistory();
+  }, [user]);
+
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'error': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "completed": return "bg-green-100 text-green-800";
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      case "error": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   };
 
-  if (mockHistory.length === 0) {
+  if (loading) {
+    return <div className="text-center py-12 text-muted-foreground">Loading...</div>;
+  }
+
+  if (!user) {
+    return <div className="text-center py-12 text-muted-foreground">Sign in to view your processing history.</div>;
+  }
+
+  if (!history.length) {
     return (
       <div className="text-center py-12">
         <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -98,11 +128,11 @@ export const ProcessingHistory = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Recent Processing Activity</h3>
-        <Badge variant="secondary">{mockHistory.length} documents processed</Badge>
+        <Badge variant="secondary">{history.length} documents processed</Badge>
       </div>
 
       <div className="space-y-4">
-        {mockHistory.map((record) => (
+        {history.map((record) => (
           <Card key={record.id} className="shadow-soft hover:shadow-medium transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
@@ -111,8 +141,8 @@ export const ProcessingHistory = () => {
                     <FileText className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-base">{record.fileName}</h4>
-                    <p className="text-sm text-muted-foreground">{record.documentType}</p>
+                    <h4 className="font-semibold text-base">{record.document_type}</h4>
+                    <p className="text-sm text-muted-foreground">{record.non_sensitive_metadata?.cluster_id ? `Cluster: ${record.non_sensitive_metadata.cluster_id}` : null}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -120,65 +150,30 @@ export const ProcessingHistory = () => {
                     {record.status}
                   </Badge>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {formatDate(record.processedAt)}
+                    {formatDate(record.processed_at)}
                   </p>
                 </div>
               </div>
 
-              {record.status === 'completed' && record.extractedFields && (
-                <div className="space-y-3">
-                  <h5 className="font-medium text-sm">Extracted Information:</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {record.extractedFields.patientName && (
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Patient</p>
-                          <p className="text-sm font-medium">{record.extractedFields.patientName}</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {record.extractedFields.claimAmount && (
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Amount</p>
-                          <p className="text-sm font-medium">{record.extractedFields.claimAmount}</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {record.extractedFields.dateOfService && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Service Date</p>
-                          <p className="text-sm font-medium">{record.extractedFields.dateOfService}</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {record.extractedFields.providerName && (
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Provider</p>
-                          <p className="text-sm font-medium">{record.extractedFields.providerName}</p>
-                        </div>
-                      </div>
-                    )}
+              <div className="space-y-3">
+                <h5 className="font-medium text-sm">Processing Result:</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Validation:</span>
+                    <span className="text-sm font-medium">{record.non_sensitive_metadata?.validation_status}</span>
                   </div>
-                  
-                  {record.extractedFields.documentId && (
-                    <div className="pt-2 border-t">
-                      <p className="text-xs text-muted-foreground">
-                        Document ID: <span className="font-mono">{record.extractedFields.documentId}</span>
-                      </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Anomaly:</span>
+                    <span className="text-sm font-medium">{record.non_sensitive_metadata?.anomaly ? "Yes" : "No"}</span>
+                  </div>
+                  {record.non_sensitive_metadata?.anomaly_reason && (
+                    <div className="flex items-center gap-2 col-span-2">
+                      <span className="text-xs text-muted-foreground">Reason:</span>
+                      <span className="text-sm font-medium">{record.non_sensitive_metadata.anomaly_reason}</span>
                     </div>
                   )}
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         ))}
