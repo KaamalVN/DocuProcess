@@ -4,6 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, FileImage, FileText, X, CheckCircle, AlertCircle } from "lucide-react";
+import dummyProcessingResults from "@/lib/dummyProcessingResults.json";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthContext";
 
 interface UploadedFile {
   id: string;
@@ -17,6 +20,7 @@ export const DocumentUpload = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -97,25 +101,33 @@ export const DocumentUpload = () => {
       ));
     }
 
-    // Simulate completion with extracted data
+    // Pick a random dummy result
+    const dummy = dummyProcessingResults[Math.floor(Math.random() * dummyProcessingResults.length)];
+
     setFiles(prev => prev.map(f => 
       f.id === fileId ? { 
         ...f, 
-        status: 'completed',
+        status: dummy.status === 'error' ? 'error' : 'completed',
         progress: 100,
-        extractedData: {
-          documentType: 'Medical Bill',
-          patientName: 'Sample Patient',
-          claimAmount: '₹15,000',
-          dateOfService: '2024-01-15',
-          providerName: 'City Hospital'
-        }
+        extractedData: dummy
       } : f
     ));
 
+    // Store in Supabase (if user is logged in)
+    if (user) {
+      await supabase.from('document_processing_history').insert({
+        user_id: user.id,
+        document_type: dummy.document_type,
+        status: dummy.status,
+        extracted_fields: null, // not storing sensitive data
+        file_name: '', // not storing file name
+        non_sensitive_metadata: dummy.non_sensitive_metadata,
+      });
+    }
+
     toast({
-      title: "Document processed successfully",
-      description: "OCR extraction and field detection completed.",
+      title: dummy.status === 'error' ? "Document processing failed" : "Document processed successfully",
+      description: dummy.status === 'error' ? "There was an error processing your document." : "OCR extraction and field detection completed.",
     });
   };
 
@@ -228,24 +240,30 @@ export const DocumentUpload = () => {
                         
                         {uploadFile.status === 'completed' && uploadFile.extractedData && (
                           <div className="mt-3 p-3 bg-muted rounded-lg">
-                            <h6 className="font-medium mb-2">Extracted Information:</h6>
+                            <h6 className="font-medium mb-2">Processing Result:</h6>
                             <div className="grid grid-cols-2 gap-2 text-sm">
                               <div>
                                 <span className="text-muted-foreground">Type:</span>
-                                <span className="ml-2 font-medium">{uploadFile.extractedData.documentType}</span>
+                                <span className="ml-2 font-medium">{uploadFile.extractedData.document_type}</span>
                               </div>
                               <div>
-                                <span className="text-muted-foreground">Patient:</span>
-                                <span className="ml-2 font-medium">{uploadFile.extractedData.patientName}</span>
+                                <span className="text-muted-foreground">Status:</span>
+                                <span className="ml-2 font-medium">{uploadFile.extractedData.status}</span>
                               </div>
                               <div>
-                                <span className="text-muted-foreground">Amount:</span>
-                                <span className="ml-2 font-medium">{uploadFile.extractedData.claimAmount}</span>
+                                <span className="text-muted-foreground">Validation:</span>
+                                <span className="ml-2 font-medium">{uploadFile.extractedData.non_sensitive_metadata.validation_status}</span>
                               </div>
                               <div>
-                                <span className="text-muted-foreground">Date:</span>
-                                <span className="ml-2 font-medium">{uploadFile.extractedData.dateOfService}</span>
+                                <span className="text-muted-foreground">Anomaly:</span>
+                                <span className="ml-2 font-medium">{uploadFile.extractedData.non_sensitive_metadata.anomaly ? 'Yes' : 'No'}</span>
                               </div>
+                              {uploadFile.extractedData.non_sensitive_metadata.anomaly_reason && (
+                                <div className="col-span-2">
+                                  <span className="text-muted-foreground">Reason:</span>
+                                  <span className="ml-2 font-medium">{uploadFile.extractedData.non_sensitive_metadata.anomaly_reason}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
