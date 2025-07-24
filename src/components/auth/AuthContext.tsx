@@ -31,6 +31,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Handle OAuth redirect callback
+  useEffect(() => {
+    const handleOAuthRedirect = async () => {
+      if (window.location.hash.includes('access_token')) {
+        const { data, error } = await supabase.auth.getSessionFromUrl();
+        if (error) {
+          console.error('OAuth error:', error);
+        } else {
+          setSession(data.session);
+          setUser(data.session?.user ?? null);
+        }
+        // Clean up the URL (remove hash)
+        window.location.replace(window.location.pathname);
+      }
+    };
+    handleOAuthRedirect();
+  }, []);
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
